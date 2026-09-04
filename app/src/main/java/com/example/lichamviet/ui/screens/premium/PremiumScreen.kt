@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import com.example.lichamviet.data.repository.UserPreferencesRepository
 import com.example.lichamviet.data.repository.VipPlan
 import com.example.lichamviet.theme.*
+import com.example.lichamviet.ui.screens.settings.DonateDialog
 
 @Composable
 fun PremiumScreen(
@@ -37,6 +38,7 @@ fun PremiumScreen(
     var selectedPlan by remember { mutableStateOf(UserPreferencesRepository.VIP_PLANS[1]) } // Mặc định gói 1 năm
     var showSuccessDialog by remember { mutableStateOf(false) }
     var successMessage by remember { mutableStateOf("") }
+    var showDonateDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -327,7 +329,33 @@ fun PremiumScreen(
                     fontWeight = FontWeight.Medium
                 )
             }
+
+            OutlinedButton(
+                onClick = { showDonateDialog = true },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.VolunteerActivism,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Ủng hộ tác giả (Gói Donate linh hoạt)",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
+    }
+
+    // Dialog Ủng hộ Tác giả (Donate)
+    if (showDonateDialog) {
+        DonateDialog(onDismiss = { showDonateDialog = false })
     }
 
     // Dialog thông báo thành công

@@ -19,6 +19,7 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -82,4 +83,23 @@ dependencies {
   implementation(libs.androidx.navigation3.ui)
   implementation(libs.androidx.navigation3.runtime)
   implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+}
+
+val releaseApkDir = layout.buildDirectory.dir("outputs/apk/release").get().asFile
+val releaseSourceFile = File(releaseApkDir, "app-release.apk")
+val releaseTargetFile = File(releaseApkDir, "Lịch Âm Việt.apk")
+
+tasks.register("copyReleaseApk") {
+    val src = releaseSourceFile
+    val dst = releaseTargetFile
+    doLast {
+        if (src.exists()) {
+            src.copyTo(dst, overwrite = true)
+            println("Successfully copied APK to: ${dst.name}")
+        }
+    }
+}
+
+tasks.matching { it.name == "assembleRelease" }.configureEach {
+    finalizedBy("copyReleaseApk")
 }

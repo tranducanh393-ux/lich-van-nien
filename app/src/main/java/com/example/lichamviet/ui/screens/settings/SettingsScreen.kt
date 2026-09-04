@@ -43,6 +43,7 @@ fun SettingsScreen(
     var showAuthDialog by remember { mutableStateOf(false) }
     var authInitialTab by remember { mutableIntStateOf(0) }
     var showGoogleDialog by remember { mutableStateOf(false) }
+    var showDonateDialog by remember { mutableStateOf(false) }
 
     // Cử chỉ vuốt back và phím back
     BackHandler {
@@ -571,6 +572,77 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            // 4.5 ỦNG HỘ TÁC GIẢ (DONATE)
+            Text(
+                text = "ỦNG HỘ TÁC GIẢ",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                letterSpacing = 1.sp,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+            )
+
+            ElevatedCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Favorite,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Mời Cà Phê / Ủng Hộ Phát Triển",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Gói 10k, 20k, 50k... qua VietQR, Chuyển khoản, MoMo",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    FilledTonalButton(
+                        onClick = { showDonateDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.VolunteerActivism,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Ủng Hộ Ngay (Donate)", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             // 5. THÔNG TIN ỨNG DỤNG
             ElevatedCard(
                 modifier = Modifier
@@ -606,6 +678,11 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+
+    // Hộp thoại Ủng hộ Tác giả (Donate)
+    if (showDonateDialog) {
+        DonateDialog(onDismiss = { showDonateDialog = false })
     }
 
     // Hộp thoại Đăng nhập / Đăng ký Email & Mật khẩu thực tế
