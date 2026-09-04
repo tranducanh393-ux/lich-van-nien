@@ -88,14 +88,23 @@ dependencies {
 val releaseApkDir = layout.buildDirectory.dir("outputs/apk/release").get().asFile
 val releaseSourceFile = File(releaseApkDir, "app-release.apk")
 val releaseTargetFile = File(releaseApkDir, "Lịch Âm Việt.apk")
+val releaseTargetAsciiFile = File(releaseApkDir, "Lich-Am-Viet.apk")
+val rootApkFile = File(rootDir, "Lịch Âm Việt.apk")
+val rootAsciiApkFile = File(rootDir, "Lich-Am-Viet.apk")
 
 tasks.register("copyReleaseApk") {
     val src = releaseSourceFile
     val dst = releaseTargetFile
+    val dstAscii = releaseTargetAsciiFile
+    val rootDst = rootApkFile
+    val rootDstAscii = rootAsciiApkFile
     doLast {
         if (src.exists()) {
             src.copyTo(dst, overwrite = true)
-            println("Successfully copied APK to: ${dst.name}")
+            src.copyTo(dstAscii, overwrite = true)
+            src.copyTo(rootDst, overwrite = true)
+            src.copyTo(rootDstAscii, overwrite = true)
+            println("Successfully copied APK to: ${dst.name} and ${rootDst.absolutePath}")
         }
     }
 }
