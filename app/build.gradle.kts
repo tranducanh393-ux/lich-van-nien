@@ -83,6 +83,11 @@ dependencies {
   implementation(libs.androidx.navigation3.ui)
   implementation(libs.androidx.navigation3.runtime)
   implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+
+  // Google Sign-In via Credential Manager (đăng nhập thực tế bằng tài khoản Google trên máy)
+  implementation(libs.androidx.credentials)
+  implementation(libs.androidx.credentials.play.services.auth)
+  implementation(libs.googleid)
 }
 
 val releaseApkDir = layout.buildDirectory.dir("outputs/apk/release").get().asFile
