@@ -131,8 +131,8 @@ private fun TetCountdownHeroCard(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            MaterialTheme.colorScheme.primary,
-                            MaterialTheme.colorScheme.secondary
+                            Color(0xFF8B1212),
+                            Color(0xFF4C0808)
                         )
                     )
                 )
@@ -324,12 +324,12 @@ private fun HolidayItemCard(
                             modifier = Modifier.height(18.dp)
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                 modifier = Modifier.padding(horizontal = 6.dp),
+                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(Icons.Default.WorkOff, contentDescription = null, tint = Color.White, modifier = Modifier.size(10.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(text = "Nghỉ lễ toàn quốc", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                                 Icon(Icons.Default.WorkOff, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(10.dp))
+                                 Spacer(modifier = Modifier.width(4.dp))
+                                 Text(text = "Nghỉ lễ toàn quốc", fontSize = 10.sp, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
                             }
                         }
                     }

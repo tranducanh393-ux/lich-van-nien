@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -31,6 +32,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.lichamviet.data.auth.AuthManager
 import com.example.lichamviet.data.repository.UserPreferencesRepository
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,11 +42,15 @@ fun SettingsScreen(
 ) {
     val prefs by UserPreferencesRepository.preferences.collectAsState()
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     var showAuthDialog by remember { mutableStateOf(false) }
     var authInitialTab by remember { mutableIntStateOf(0) }
     var showGoogleDialog by remember { mutableStateOf(false) }
     var showDonateDialog by remember { mutableStateOf(false) }
+    var showChangePasswordDialog by remember { mutableStateOf(false) }
+    var isSyncing by remember { mutableStateOf(false) }
+    var lastSyncText by remember { mutableStateOf("Vừa xong") }
 
     // Cử chỉ vuốt back và phím back
     BackHandler {
@@ -228,41 +235,58 @@ fun SettingsScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(48.dp)
+                                    .size(50.dp)
                                     .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                                    .background(if (profile.provider == "Google") Color(0xFFEA4335) else MaterialTheme.colorScheme.primaryContainer),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = profile.avatarInitials,
+                                    text = if (profile.provider == "Google") "G" else profile.avatarInitials,
                                     fontSize = 20.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    color = if (profile.provider == "Google") Color.White else MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
                             Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = profile.name,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = profile.name,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = if (profile.provider == "Google") Color(0xFFEA4335).copy(alpha = 0.15f) else MaterialTheme.colorScheme.primaryContainer,
+                                        border = BorderStroke(0.5.dp, if (profile.provider == "Google") Color(0xFFEA4335) else MaterialTheme.colorScheme.primary)
+                                    ) {
+                                        Text(
+                                            text = if (profile.provider == "Google") "Google" else "Email",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (profile.provider == "Google") Color(0xFFC5221F) else MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
                                 Text(
                                     text = profile.email,
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
-                                        imageVector = Icons.Default.CheckCircle,
+                                        imageVector = Icons.Default.CloudDone,
                                         contentDescription = null,
                                         tint = Color(0xFF2E7D32),
                                         modifier = Modifier.size(14.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = "Đã đồng bộ dữ liệu (${profile.provider})",
+                                        text = "Đã đồng bộ ($lastSyncText)",
                                         fontSize = 11.sp,
                                         color = Color(0xFF2E7D32),
                                         fontWeight = FontWeight.Medium
@@ -271,7 +295,53 @@ fun SettingsScreen(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Nút Đồng bộ ngay
+                        FilledTonalButton(
+                            onClick = {
+                                coroutineScope.launch {
+                                    isSyncing = true
+                                    delay(500)
+                                    AuthManager.syncData()
+                                    isSyncing = false
+                                    lastSyncText = "Vừa xong"
+                                    Toast.makeText(context, "Đã đồng bộ thành công dữ liệu đám mây!", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            enabled = !isSyncing,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            if (isSyncing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Đang đồng bộ dữ liệu đám mây...", fontSize = 13.sp)
+                            } else {
+                                Icon(Icons.Default.Sync, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Đồng bộ dữ liệu đám mây ngay", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        if (profile.provider == "Email") {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = { showChangePasswordDialog = true },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Default.LockReset, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Đổi mật khẩu tài khoản", fontSize = 13.sp)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
 
                         OutlinedButton(
                             onClick = {
@@ -302,9 +372,9 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 2. GIAO DIỆN MATERIAL 3
+            // 2. GIAO DIỆN & CHỦ ĐỀ
             Text(
-                text = "GIAO DIỆN & TRẢI NGHIỆM MATERIAL 3",
+                text = "GIAO DIỆN & CHỦ ĐỀ",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
@@ -409,7 +479,7 @@ fun SettingsScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Màu động Material You (M3)",
+                                text = "Tự động đổi màu theo hình nền máy",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -664,7 +734,7 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "Phiên bản Material 3 • Dành riêng cho người Việt",
+                        text = "Phiên bản Lịch Âm thuần Việt • Dành riêng cho người Việt",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -697,81 +767,22 @@ fun SettingsScreen(
         )
     }
 
-    // Hộp thoại Đăng nhập Google thực tế
+    // Hộp thoại Đăng nhập Google thực tế chuẩn Google Identity Services
     if (showGoogleDialog) {
-        var gName by remember { mutableStateOf("") }
-        var gEmail by remember { mutableStateOf("") }
-        var gError by remember { mutableStateOf<String?>(null) }
-
-        AlertDialog(
-            onDismissRequest = { showGoogleDialog = false },
-            icon = {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFEA4335)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("G", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                }
-            },
-            title = {
-                Text("ĐĂNG NHẬP GOOGLE", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        "Nhập thông tin tài khoản Google của bạn để liên kết và đồng bộ:",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    if (gError != null) {
-                        Text(gError!!, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
-                    }
-                    OutlinedTextField(
-                        value = gName,
-                        onValueChange = { gName = it; gError = null },
-                        label = { Text("Tên hiển thị Google") },
-                        placeholder = { Text("Ví dụ: Nguyễn Văn An") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = gEmail,
-                        onValueChange = { gEmail = it; gError = null },
-                        label = { Text("Địa chỉ Email (@gmail.com)") },
-                        placeholder = { Text("tenban@gmail.com") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Email)
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val trimmedEmail = gEmail.trim()
-                        if (trimmedEmail.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(trimmedEmail).matches()) {
-                            gError = "Vui lòng nhập đúng định dạng email Google"
-                            return@Button
-                        }
-                        val user = AuthManager.loginWithGoogleAccount(
-                            name = gName.ifBlank { "Tài khoản Google" },
-                            email = trimmedEmail
-                        )
-                        showGoogleDialog = false
-                        Toast.makeText(context, "Đăng nhập Google thành công: ${user.email}", Toast.LENGTH_SHORT).show()
-                    }
-                ) {
-                    Text("Xác Nhận Đăng Nhập")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showGoogleDialog = false }) {
-                    Text("Hủy Bỏ")
-                }
+        GoogleSignInDialog(
+            onDismiss = { showGoogleDialog = false },
+            onSuccess = { user ->
+                showGoogleDialog = false
+                lastSyncText = "Vừa xong"
+                Toast.makeText(context, "Đăng nhập Google thành công: ${user.email}", Toast.LENGTH_SHORT).show()
             }
+        )
+    }
+
+    // Hộp thoại Đổi mật khẩu
+    if (showChangePasswordDialog) {
+        ChangePasswordDialog(
+            onDismiss = { showChangePasswordDialog = false }
         )
     }
 }

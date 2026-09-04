@@ -153,7 +153,7 @@ private fun MiniMonthCard(
                 Text(
                     text = "Chạm để xem chi tiết →",
                     fontSize = 11.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -172,7 +172,7 @@ private fun MiniMonthCard(
                         textAlign = TextAlign.Center,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (index == 6) MaterialTheme.colorScheme.primary else Color.Gray
+                        color = if (index == 6) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

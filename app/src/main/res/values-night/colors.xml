@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_card_bg">#1D2024</color>
+    <color name="widget_card_stroke">#33383F</color>
+    <color name="widget_primary">#A8C7FA</color>
+    <color name="widget_on_surface">#E2E2E9</color>
+    <color name="widget_on_surface_variant">#A6ABB6</color>
+    <color name="widget_divider">#33383F</color>
+    <color name="widget_auspicious">#7DDC96</color>
+    <color name="widget_badge_bg">#0842A0</color>
+    <color name="widget_badge_text">#D3E3FD</color>
+</resources>

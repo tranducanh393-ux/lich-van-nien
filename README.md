@@ -1,4 +1,4 @@
-# 🗓️ Lịch Vạn Niên (Vietnamese Lunar Calendar) - Android Jetpack Compose Material 3
+ # 🗓️ Lịch Vạn Niên (Vietnamese Lunar Calendar) - Android Jetpack Compose Material 3
 
 Ứng dụng **Lịch Vạn Niên** thuần Việt hiện đại, được xây dựng hoàn toàn bằng công nghệ mới nhất của Google: **Kotlin, Jetpack Compose, Material 3, Navigation3**.
 
@@ -49,13 +49,21 @@
   - 🟡 **Vàng Hổ Phách (Warm Amber)** - Ấm cúng, may mắn.
   - 🟣 **Tối Trầm Hiện Đại (Dark Sleek)** - Tối ưu cho ban đêm và màn hình OLED.
 - **Material You Dynamic Color**: Tự động đồng bộ màu sắc giao diện theo hình nền điện thoại trên Android 12+.
+- **Thanh điều hướng Floating Pill Shape**: Thiết kế dạng viên nang nổi bồng bềnh chuẩn các ứng dụng mới nhất của Google.
+- **Tương phản & hiển thị đồng nhất**: Tự động chuyển đổi màu chữ sáng trên nền tối và chữ tối trên nền sáng (High-Contrast Dark/Light Themes).
 - **Chế độ chữ lớn**: Tối ưu khả năng tiếp cận, giúp người cao tuổi dễ dàng đọc lịch và văn khấn.
 
-### 🔐 7. Hệ Thống Tài Khoản & Xác Thực Thật Sự (Real Authentication)
-- Đăng ký và Đăng nhập tài khoản bằng Email & Mật khẩu thực tế.
-- Bảo mật: Băm mật khẩu với thuật toán SHA-256 và chuỗi muối (Salt) riêng biệt cho từng tài khoản.
-- Duy trì phiên đăng nhập bền vững (Persistent Session) khi tắt/mở ứng dụng.
-- Tích hợp cơ chế chọn tài khoản Google (Google Sign-In) trên thiết bị.
+### 📱 7. Tiện Ích Màn Hình Chính (Home Screen Widget)
+- **Widget Lịch Âm - Hôm Nay**: Hiển thị trực quan ngày Dương, ngày Âm, Can Chi Ngày, Can Chi Năm, Tiết khí và Đánh giá Hoàng Đạo ngay trên màn hình chính điện thoại.
+- **Tự động đổi theme**: Thích ứng hoàn hảo với Dark Mode và Light Mode của hệ điều hành.
+- **Chạm nhanh để mở app**: 1 chạm mở ngay trang lịch bloc chi tiết của ngày hôm nay.
+
+### 🔐 8. Hệ Thống Tài Khoản & Đồng Bộ Đám Mây Thực Tế
+- Đăng ký và Đăng nhập tài khoản bằng Email & Mật khẩu với mã hóa bảo mật SHA-256 + Salt.
+- **Đăng nhập Google**: Hộp thoại chọn tài khoản Google chuẩn Google Identity Services trên thiết bị.
+- **Đồng bộ đám mây tức thì**: Nút đồng bộ với trạng thái thời gian thực và sao lưu an toàn.
+- **Quản lý mật khẩu**: Cho phép đổi mật khẩu tài khoản trực tiếp trong cài đặt.
+- Duy trì phiên đăng nhập bền vững (Persistent Session).
 
 ---
 

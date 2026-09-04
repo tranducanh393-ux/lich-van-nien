@@ -205,7 +205,7 @@ fun DayScreen(
                 icon = { Icon(Icons.Default.Today, contentDescription = null) },
                 text = { Text("Về Hôm Nay", fontWeight = FontWeight.Bold) },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White
+                contentColor = MaterialTheme.colorScheme.onPrimary
             )
         }
     }
@@ -675,7 +675,7 @@ private fun CanChiCard(lunarDate: com.example.lichamviet.data.model.LunarDate) {
 @Composable
 private fun CanChiColumn(title: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = title, fontSize = 12.sp, color = Color.Gray)
+        Text(text = title, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(modifier = Modifier.height(4.dp))
         Text(text = value, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
     }
@@ -850,7 +850,7 @@ private fun ZodiacAnimalCard(canChiDay: String) {
                 Text(
                     text = animal.auspiciousNote,
                     fontSize = 11.sp,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 15.sp
                 )
             }
@@ -906,7 +906,7 @@ private fun MoonPhaseCard(lunarDay: Int) {
                 Text(
                     text = moonPhase.culturalNote,
                     fontSize = 11.sp,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 15.sp
                 )
             }

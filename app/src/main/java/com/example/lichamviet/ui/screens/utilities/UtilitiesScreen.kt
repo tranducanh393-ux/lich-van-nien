@@ -179,7 +179,7 @@ private fun VanKhanListView(onSelectVanKhan: (VanKhan) -> Unit) {
                         Text(
                             text = item.occasion,
                             fontSize = 12.sp,
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 16.sp
                         )
                     }

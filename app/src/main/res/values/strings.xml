@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Lịch Vạn Niên</string>
+    <string name="widget_name">Lịch Âm - Hôm Nay</string>
+    <string name="widget_description">Xem nhanh ngày dương lịch, ngày âm lịch, can chi và giờ hoàng đạo trên màn hình chính</string>
 </resources>

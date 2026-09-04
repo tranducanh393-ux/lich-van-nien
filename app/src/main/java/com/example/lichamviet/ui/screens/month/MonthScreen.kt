@@ -411,10 +411,13 @@ private fun SelectedDayPreviewCard(
             Button(
                 onClick = onViewBloc,
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Xem Chi Tiết Tờ Lịch Bloc", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Xem Chi Tiết Tờ Lịch Bloc", fontWeight = FontWeight.Bold)
             }
         }
     }

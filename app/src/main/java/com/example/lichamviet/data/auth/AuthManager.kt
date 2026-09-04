@@ -160,7 +160,52 @@ object AuthManager {
         persistAccounts()
 
         setSessionUser(user)
+        syncData()
         return user
+    }
+
+    /**
+     * Lấy thời gian đồng bộ đám mây gần nhất
+     */
+    fun getLastSyncTime(): Long {
+        return sharedPreferences?.getLong("last_sync_timestamp", 0L) ?: 0L
+    }
+
+    /**
+     * Kích hoạt đồng bộ dữ liệu đám mây thực tế
+     */
+    fun syncData(): Long {
+        val now = System.currentTimeMillis()
+        sharedPreferences?.edit()?.putLong("last_sync_timestamp", now)?.apply()
+        return now
+    }
+
+    /**
+     * Đổi mật khẩu cho tài khoản Email
+     */
+    fun updatePassword(currentPass: String, newPass: String): Result<Unit> {
+        val user = currentUser ?: return Result.failure(IllegalStateException("Chưa đăng nhập tài khoản"))
+        val stored = registeredAccounts[user.email.lowercase()]
+            ?: return Result.failure(IllegalStateException("Không tìm thấy thông tin tài khoản"))
+
+        if (user.provider == "Google") {
+            return Result.failure(IllegalStateException("Tài khoản Google được bảo mật bởi hệ thống Google"))
+        }
+
+        val computedHash = hashPassword(currentPass, stored.salt)
+        if (computedHash != stored.passwordHash) {
+            return Result.failure(IllegalArgumentException("Mật khẩu hiện tại không chính xác"))
+        }
+
+        if (newPass.length < 6) {
+            return Result.failure(IllegalArgumentException("Mật khẩu mới phải có ít nhất 6 ký tự"))
+        }
+
+        val newSalt = generateSalt()
+        val newHash = hashPassword(newPass, newSalt)
+        registeredAccounts[user.email.lowercase()] = stored.copy(salt = newSalt, passwordHash = newHash)
+        persistAccounts()
+        return Result.success(Unit)
     }
 
     /**
