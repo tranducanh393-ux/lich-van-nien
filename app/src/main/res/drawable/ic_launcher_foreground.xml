@@ -1,0 +1,49 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Bóng đổ nhẹ của tờ bloc lịch -->
+    <path
+        android:fillColor="#33000000"
+        android:pathData="M29,32h52a6,6 0,0,1 6,6v44a6,6 0,0,1 -6,6h-52a6,6 0,0,1 -6,-6v-44a6,6 0,0,1 6,-6z" />
+
+    <!-- Thân tờ lịch bloc nền trắng ngà giấy dó -->
+    <path
+        android:fillColor="#FFFDF7"
+        android:pathData="M27,29h52a6,6 0,0,1 6,6v44a6,6 0,0,1 -6,6h-52a6,6 0,0,1 -6,-6v-44a6,6 0,0,1 6,-6z" />
+
+    <!-- Phần gáy đỏ son trên đầu tờ lịch -->
+    <path
+        android:fillColor="#C62828"
+        android:pathData="M27,29h52a6,6 0,0,1 6,6v12h-64v-12a6,6 0,0,1 6,-6z" />
+
+    <!-- Hai khoen treo lịch mạ vàng kim -->
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M38,25h4v9h-4z" />
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M66,25h4v9h-4z" />
+
+    <!-- Viền vàng kim ngăn cách gáy lịch -->
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M21,47h64v1.5h-64z" />
+
+    <!-- Biểu tượng Vầng Trăng Khuyết Vàng Kim (Âm Lịch) -->
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M54,51a14,14 0,1,0 13.5,18.5a11,11 0,1,1 -13.5,-18.5z" />
+
+    <!-- Ngôi sao may mắn hoàng đạo nhỏ -->
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M64,53l1.5,3.5l3.5,0.5l-2.5,2.5l0.5,3.5l-3,-1.5l-3,1.5l0.5,-3.5l-2.5,-2.5l3.5,-0.5z" />
+
+    <!-- Chấm đỏ may mắn truyền thống -->
+    <path
+        android:fillColor="#C62828"
+        android:pathData="M43,76h22v2.5h-22z" />
+</vector>
