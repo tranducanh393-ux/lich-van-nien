@@ -60,3 +60,7 @@ Thumbs.db
 
 # Local push helper
 push_to_github.bat
+upload_*.ps1
+get_token.ps1
+cred_in.txt
+ReadCred.cs

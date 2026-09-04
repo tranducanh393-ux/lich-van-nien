@@ -6,7 +6,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -44,22 +44,22 @@ fun AppBottomBar(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 20.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Thanh điều hướng dạng Floating Pill Shape chuẩn Google
+        // Thanh điều hướng dạng Siêu Viên Thuốc (Ultra-Pill Shape) chuẩn Google Material 3
         Surface(
-            shape = RoundedCornerShape(32.dp),
+            shape = CircleShape,
             color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.96f),
             tonalElevation = 6.dp,
-            shadowElevation = 10.dp,
+            shadowElevation = 12.dp,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 6.dp, vertical = 6.dp),
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -87,9 +87,9 @@ fun AppBottomBar(
                     Column(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(20.dp))
+                            .clip(CircleShape)
                             .clickable { onTabSelected(tab) }
-                            .padding(vertical = 4.dp),
+                            .padding(vertical = 3.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
@@ -97,7 +97,7 @@ fun AppBottomBar(
                             modifier = Modifier
                                 .height(32.dp)
                                 .width(56.dp)
-                                .clip(RoundedCornerShape(16.dp))
+                                .clip(CircleShape)
                                 .background(indicatorColor),
                             contentAlignment = Alignment.Center
                         ) {
@@ -108,7 +108,7 @@ fun AppBottomBar(
                                 modifier = Modifier.size(22.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
                         Text(
                             text = tab.title,
                             fontSize = 11.sp,

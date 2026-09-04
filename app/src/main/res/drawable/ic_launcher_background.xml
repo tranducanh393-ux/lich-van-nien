@@ -4,28 +4,28 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Nền đỏ son may mắn truyền thống Việt Nam -->
+    <!-- Nền Material 3 Google Blue Container thanh lịch -->
     <path
-        android:fillColor="#B71C1C"
+        android:fillColor="#0B57D0"
         android:pathData="M0,0h108v108h-108z" />
 
-    <!-- Vòng tròn nền trung tâm đỏ thắm cung đình -->
+    <!-- Quầng sáng trung tâm Material Tonal Surface -->
     <path
-        android:fillColor="#8E0000"
+        android:fillColor="#1A73E8"
+        android:pathData="M54,54m-46,0a46,46 0,1,1 92,0a46,46 0,1,1 -92,0" />
+
+    <!-- Vòng hào quang nhẹ nhàng chuẩn Material You -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#A8C7FA"
+        android:strokeWidth="1.5"
+        android:strokeAlpha="0.4"
         android:pathData="M54,54m-42,0a42,42 0,1,1 84,0a42,42 0,1,1 -84,0" />
 
-    <!-- Viền hoa văn chỉ vàng kim hoàng gia -->
     <path
         android:fillColor="#00000000"
-        android:strokeColor="#FFD54F"
-        android:strokeWidth="1.2"
-        android:strokeAlpha="0.6"
-        android:pathData="M54,54m-40,0a40,40 0,1,1 80,0a40,40 0,1,1 -80,0" />
-
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FFB300"
-        android:strokeWidth="0.8"
-        android:strokeAlpha="0.4"
-        android:pathData="M54,54m-45,0a45,45 0,1,1 90,0a45,45 0,1,1 -90,0" />
+        android:strokeColor="#D3E3FD"
+        android:strokeWidth="1"
+        android:strokeAlpha="0.25"
+        android:pathData="M54,54m-48,0a48,48 0,1,1 96,0a48,48 0,1,1 -96,0" />
 </vector>

@@ -13,11 +13,13 @@ import androidx.compose.ui.Modifier
 import com.example.lichamviet.data.auth.AuthManager
 import com.example.lichamviet.data.repository.UserPreferencesRepository
 import com.example.lichamviet.theme.LichAmVietTheme
+import com.example.lichamviet.widget.LichAmAppWidgetProvider
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     AuthManager.init(this)
+    LichAmAppWidgetProvider.refreshAllWidgets(this)
 
     enableEdgeToEdge()
     setContent {
@@ -28,5 +30,10 @@ class MainActivity : ComponentActivity() {
         }
       }
     }
+  }
+
+  override fun onResume() {
+    super.onResume()
+    LichAmAppWidgetProvider.refreshAllWidgets(this)
   }
 }

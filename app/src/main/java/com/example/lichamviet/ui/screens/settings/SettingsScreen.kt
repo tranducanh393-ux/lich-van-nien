@@ -1,8 +1,11 @@
 package com.example.lichamviet.ui.screens.settings
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -17,7 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -30,10 +32,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.example.lichamviet.data.auth.AuthManager
+import com.example.lichamviet.data.repository.AppTheme
+import com.example.lichamviet.data.repository.CalendarSyncHelper
 import com.example.lichamviet.data.repository.UserPreferencesRepository
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,46 +44,58 @@ fun SettingsScreen(
 ) {
     val prefs by UserPreferencesRepository.preferences.collectAsState()
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
 
-    var showAuthDialog by remember { mutableStateOf(false) }
-    var authInitialTab by remember { mutableIntStateOf(0) }
-    var showGoogleDialog by remember { mutableStateOf(false) }
     var showDonateDialog by remember { mutableStateOf(false) }
-    var showChangePasswordDialog by remember { mutableStateOf(false) }
-    var isSyncing by remember { mutableStateOf(false) }
-    var lastSyncText by remember { mutableStateOf("Vừa xong") }
 
-    // Cử chỉ vuốt back và phím back
-    BackHandler {
-        onBack()
+    // Quản lý trạng thái quyền hệ thống
+    var hasNotificationPermission by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            } else true
+        )
+    }
+
+    var hasCalendarPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.WRITE_CALENDAR
+            ) == PackageManager.PERMISSION_GRANTED
+        )
     }
 
     // Bộ xin quyền thông báo hệ thống (Android 13+)
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
+        hasNotificationPermission = isGranted
         if (isGranted) {
             Toast.makeText(context, "Đã cấp quyền thông báo thành công!", Toast.LENGTH_SHORT).show()
         } else {
-            Toast.makeText(
-                context,
-                "Vui lòng cấp quyền thông báo để ứng dụng có thể nhắc bạn ngày sóc vọng và lễ tết!",
-                Toast.LENGTH_LONG
-            ).show()
+            Toast.makeText(context, "Quyền thông báo chưa được cấp", Toast.LENGTH_SHORT).show()
         }
     }
 
-    val requestNotificationPermissionIfNeeded = {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val hasPermission = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-            if (!hasPermission) {
-                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
+    // Bộ xin quyền lịch máy (Calendar)
+    val calendarPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions[Manifest.permission.WRITE_CALENDAR] == true
+        hasCalendarPermission = granted
+        if (granted) {
+            Toast.makeText(context, "Đã cấp quyền truy cập Lịch thành công!", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "Chưa cấp quyền Lịch. Bạn vẫn có thể thêm sự kiện qua giao diện hệ thống.", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    // Cử chỉ vuốt back và phím back
+    BackHandler {
+        onBack()
     }
 
     Scaffold(
@@ -89,7 +103,7 @@ fun SettingsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Cài đặt",
+                        text = "Cài đặt & Tiện ích hệ thống",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -120,9 +134,9 @@ fun SettingsScreen(
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 1. TÀI KHOẢN & ĐỒNG BỘ ĐÁM MÂY
+            // 1. KẾT NỐI DỊCH VỤ GOOGLE & THIẾT BỊ
             Text(
-                text = "TÀI KHOẢN & ĐỒNG BỘ",
+                text = "KẾT NỐI DỊCH VỤ GOOGLE & THIẾT BỊ",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
@@ -135,246 +149,105 @@ fun SettingsScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 6.dp),
                 colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    val profile = prefs.userProfile
-                    if (profile == null) {
-                        Text(
-                            text = "Đăng nhập tài khoản",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Đồng bộ ngày kỵ giỗ gia tiên, nhắc nhở ngày sóc vọng và sự kiện cá nhân an toàn trên đám mây.",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            lineHeight = 17.sp
-                        )
-
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        // Nút Đăng nhập Email & Mật khẩu
-                        Button(
-                            onClick = {
-                                authInitialTab = 0
-                                showAuthDialog = true
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Default.Email, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Đăng nhập bằng Email & Mật khẩu",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Nút Tạo tài khoản mới
-                        OutlinedButton(
-                            onClick = {
-                                authInitialTab = 1
-                                showAuthDialog = true
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Tạo tài khoản mới",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Nút Đăng nhập Google
-                        OutlinedButton(
-                            onClick = {
-                                showGoogleDialog = true
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFFEA4335)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "G",
-                                    color = Color.White,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = "Tiếp tục với Google",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    } else {
-                        // Trạng thái đã đăng nhập
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(50.dp)
-                                    .clip(CircleShape)
-                                    .background(if (profile.provider == "Google") Color(0xFFEA4335) else MaterialTheme.colorScheme.primaryContainer),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = if (profile.provider == "Google") "G" else profile.avatarInitials,
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (profile.provider == "Google") Color.White else MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = profile.name,
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Surface(
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = if (profile.provider == "Google") Color(0xFFEA4335).copy(alpha = 0.15f) else MaterialTheme.colorScheme.primaryContainer,
-                                        border = BorderStroke(0.5.dp, if (profile.provider == "Google") Color(0xFFEA4335) else MaterialTheme.colorScheme.primary)
-                                    ) {
-                                        Text(
-                                            text = if (profile.provider == "Google") "Google" else "Email",
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (profile.provider == "Google") Color(0xFFC5221F) else MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                }
-                                Text(
-                                    text = profile.email,
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = Icons.Default.CloudDone,
-                                        contentDescription = null,
-                                        tint = Color(0xFF2E7D32),
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = "Đã đồng bộ ($lastSyncText)",
-                                        fontSize = 11.sp,
-                                        color = Color(0xFF2E7D32),
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        // Nút Đồng bộ ngay
-                        FilledTonalButton(
-                            onClick = {
-                                coroutineScope.launch {
-                                    isSyncing = true
-                                    delay(500)
-                                    AuthManager.syncData()
-                                    isSyncing = false
-                                    lastSyncText = "Vừa xong"
-                                    Toast.makeText(context, "Đã đồng bộ thành công dữ liệu đám mây!", Toast.LENGTH_SHORT).show()
-                                }
-                            },
-                            enabled = !isSyncing,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            if (isSyncing) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Đang đồng bộ dữ liệu đám mây...", fontSize = 13.sp)
-                            } else {
-                                Icon(Icons.Default.Sync, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Đồng bộ dữ liệu đám mây ngay", fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                            }
-                        }
-
-                        if (profile.provider == "Email") {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            OutlinedButton(
-                                onClick = { showChangePasswordDialog = true },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Icon(Icons.Default.LockReset, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Đổi mật khẩu tài khoản", fontSize = 13.sp)
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        OutlinedButton(
-                            onClick = {
-                                AuthManager.logout()
-                                Toast.makeText(context, "Đã đăng xuất tài khoản!", Toast.LENGTH_SHORT).show()
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF4285F4)),
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Logout,
+                                imageVector = Icons.Default.Event,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Đăng xuất tài khoản",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
                             )
                         }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Lịch Google & Lịch Máy",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Đồng bộ ngày Sóc Vọng, Lễ Tết vào Lịch Google trên điện thoại",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Nút Thêm Mùng 1 / Rằm vào Google Calendar
+                    Button(
+                        onClick = {
+                            CalendarSyncHelper.syncNextSocVongToCalendar(context)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = CircleShape
+                    ) {
+                        Icon(Icons.Default.AddAlert, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Thêm ngày Sóc Vọng (Mùng 1/Rằm) vào Google Calendar",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Nút Mở Google Calendar / Lịch máy
+                    OutlinedButton(
+                        onClick = {
+                            CalendarSyncHelper.openCalendarApp(context)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = CircleShape
+                    ) {
+                        Icon(Icons.Default.CalendarMonth, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Mở ứng dụng Lịch Google trên máy",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Nút Chia sẻ thông tin ngày hôm nay
+                    FilledTonalButton(
+                        onClick = {
+                            CalendarSyncHelper.shareDayInfo(context, LocalDate.now())
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = CircleShape
+                    ) {
+                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Chia sẻ thông tin Lịch Âm hôm nay",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // 2. GIAO DIỆN & CHỦ ĐỀ
+            // 2. TRUNG TÂM QUYỀN HỆ THỐNG
             Text(
-                text = "GIAO DIỆN & CHỦ ĐỀ",
+                text = "QUYỀN HỆ THỐNG",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
@@ -387,262 +260,224 @@ fun SettingsScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 6.dp),
                 colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    // Bảng chọn Theme Material 3
+                    // Quyền Thông báo
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                } else {
+                                    Toast.makeText(context, "Hệ thống đã tự động cấp quyền thông báo", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = null,
+                            tint = if (hasNotificationPermission) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Quyền Thông Báo Nhắc Nhở",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = if (hasNotificationPermission) "Đã cấp quyền • Tự động nhắc ngày rằm, mùng 1" else "Chưa cấp quyền • Nhấn để cấp quyền ngay",
+                                fontSize = 12.sp,
+                                color = if (hasNotificationPermission) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
+                            )
+                        }
+                        Switch(
+                            checked = hasNotificationPermission,
+                            onCheckedChange = {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                }
+                            }
+                        )
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                    // Quyền Lịch máy
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                calendarPermissionLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.READ_CALENDAR,
+                                        Manifest.permission.WRITE_CALENDAR
+                                    )
+                                )
+                            }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.EditCalendar,
+                            contentDescription = null,
+                            tint = if (hasCalendarPermission) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Quyền Truy Cập Lịch Thiết Bị",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = if (hasCalendarPermission) "Đã cấp quyền • Đồng bộ nhanh vào lịch" else "Chưa cấp quyền • Nhấn để cấp quyền",
+                                fontSize = 12.sp,
+                                color = if (hasCalendarPermission) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = hasCalendarPermission,
+                            onCheckedChange = {
+                                calendarPermissionLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.READ_CALENDAR,
+                                        Manifest.permission.WRITE_CALENDAR
+                                    )
+                                )
+                            }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Nút Mở Cài Đặt Ứng Dụng
+                    OutlinedButton(
+                        onClick = {
+                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = Uri.fromParts("package", context.packageName, null)
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            context.startActivity(intent)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = CircleShape
+                    ) {
+                        Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Mở Cài đặt hệ thống của ứng dụng", fontSize = 12.sp)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // 3. GIAO DIỆN & CHỦ ĐỀ
+            Text(
+                text = "GIAO DIỆN & MÀU SẮC",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                letterSpacing = 1.sp,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+            )
+
+            ElevatedCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    // Chủ đề động Dynamic Color (Material You)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Màu Động Material You",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Tự động đổi màu theo hình nền điện thoại của bạn",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = prefs.useDynamicColor,
+                                onCheckedChange = { UserPreferencesRepository.setDynamicColor(it) }
+                            )
+                        }
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+                    }
+
                     Text(
-                        text = "Chủ đề màu sắc giao diện",
-                        fontSize = 14.sp,
+                        text = "Chọn Bảng Màu Ứng Dụng",
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        com.example.lichamviet.data.repository.AppTheme.entries.forEach { appTheme ->
-                            val isSelected = prefs.theme == appTheme
+                        AppTheme.entries.forEach { theme ->
+                            val isSelected = prefs.theme == theme
                             Surface(
+                                shape = CircleShape,
+                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                                border = if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
                                 modifier = Modifier
                                     .weight(1f)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .clickable { UserPreferencesRepository.setTheme(appTheme) },
-                                shape = RoundedCornerShape(12.dp),
-                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                                border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null
+                                    .clickable { UserPreferencesRepository.setTheme(theme) }
                             ) {
                                 Column(
-                                    modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
+                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Box(
                                         modifier = Modifier
                                             .size(24.dp)
                                             .clip(CircleShape)
-                                            .background(Color(appTheme.colorHex))
+                                            .background(Color(theme.colorHex))
                                     )
-                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = appTheme.displayName,
+                                        text = theme.displayName.substringBefore(" "),
                                         fontSize = 10.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                        maxLines = 2
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1
                                     )
                                 }
                             }
                         }
                     }
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant)
-
-                    // Chế độ chữ lớn
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Chế độ chữ lớn",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "Phù hợp cho người lớn tuổi dễ dàng đọc lịch và văn khấn",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = prefs.isLargeFont,
-                            onCheckedChange = { UserPreferencesRepository.toggleLargeFont(it) },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
-                            )
-                        )
-                    }
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant)
-
-                    // Material You Dynamic Color (Material 3)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Tự động đổi màu theo hình nền máy",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-                                    "Tự động trích màu sắc giao diện theo hình nền máy (Android 12+)"
-                                else
-                                    "Tính năng yêu cầu thiết bị chạy Android 12 trở lên",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = prefs.useDynamicColor,
-                            enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
-                            onCheckedChange = { UserPreferencesRepository.setUseDynamicColor(it) },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
-                            )
-                        )
-                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // 3. THÔNG BÁO & NHẮC NHỞ HỆ THỐNG
-            Text(
-                text = "THÔNG BÁO & NHẮC NHỞ HỆ THỐNG",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                letterSpacing = 1.sp,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
-            )
-
-            ElevatedCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    // Nhắc Mùng 1 & Rằm
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Nhắc ngày Mùng Một & Ngày Rằm",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "Báo trước 1 ngày để gia đình chuẩn bị hương hoa, mâm lễ",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = prefs.notifyMung1Ram,
-                            onCheckedChange = { isChecked ->
-                                if (isChecked) {
-                                    requestNotificationPermissionIfNeeded()
-                                }
-                                UserPreferencesRepository.setNotifyMung1Ram(isChecked)
-                            },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
-                            )
-                        )
-                    }
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant)
-
-                    // Nhắc Lễ Tết
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Nhắc ngày Lễ, Tết truyền thống",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "Thông báo các dịp Tết cổ truyền, Giỗ Tổ, Vu Lan, Trung Thu...",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = prefs.notifyHolidays,
-                            onCheckedChange = { isChecked ->
-                                if (isChecked) {
-                                    requestNotificationPermissionIfNeeded()
-                                }
-                                UserPreferencesRepository.setNotifyHolidays(isChecked)
-                            },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
-                            )
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 4. MÚI GIỜ THIÊN VĂN
-            Text(
-                text = "MÚI GIỜ THIÊN VĂN",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                letterSpacing = 1.sp,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
-            )
-
-            ElevatedCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(16.dp),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Public, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Múi giờ chuẩn: GMT+7 (Hà Nội, Việt Nam)",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "Tính toán thiên văn chuẩn xác theo kinh độ 105° Đông (thuật toán GS. Hồ Ngọc Đức). Toàn bộ tính năng xem tử vi, văn khấn và tra cứu hoàn toàn miễn phí cho người Việt.",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 17.sp
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // 4.5 ỦNG HỘ TÁC GIẢ (DONATE)
+            // 4. ỦNG HỘ PHÁT TRIỂN (DONATE)
             Text(
                 text = "ỦNG HỘ TÁC GIẢ",
                 fontSize = 12.sp,
@@ -656,13 +491,11 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
                                 .size(44.dp)
@@ -680,13 +513,13 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Mời Cà Phê / Ủng Hộ Phát Triển",
+                                text = "Mời Cà Phê / Ủng Hộ",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 15.sp,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Gói 10k, 20k, 50k... qua VietQR, Chuyển khoản, MoMo",
+                                text = "Gói 10k, 20k, 50k... qua VietQR Techcombank & MoMo",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -698,7 +531,7 @@ fun SettingsScreen(
                     FilledTonalButton(
                         onClick = { showDonateDialog = true },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = CircleShape
                     ) {
                         Icon(
                             imageVector = Icons.Default.VolunteerActivism,
@@ -713,38 +546,143 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // 5. THÔNG TIN ỨNG DỤNG
+            // 5. THÔNG TIN PHÁT TRIỂN & CREDIT TÁC GIẢ TRẦN ĐỨC ANH
             ElevatedCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = RoundedCornerShape(16.dp)
+                colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)),
+                shape = RoundedCornerShape(24.dp)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "ĐA",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
                     Text(
-                        text = "LỊCH VẠN NIÊN",
-                        fontSize = 15.sp,
+                        text = "LỊCH ÂM VIỆT NAM",
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "Phiên bản Lịch Âm thuần Việt • Dành riêng cho người Việt",
+                        text = "Phiên bản v1.0.5 Material 3 Pure",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "Gìn giữ và tôn vinh nét đẹp văn hóa cổ truyền dân tộc",
-                        fontSize = 11.sp,
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Tác giả & Phát triển:",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Trần Đức Anh",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Phone, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Số điện thoại:",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "0345413260",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Code, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Mã nguồn mở:",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "tranducanh393-ux",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:0345413260"))
+                                context.startActivity(dialIntent)
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = CircleShape
+                        ) {
+                            Icon(Icons.Default.Call, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Gọi Điện", fontSize = 12.sp)
+                        }
+
+                        Button(
+                            onClick = {
+                                val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/tranducanh393-ux/lich-van-nien"))
+                                context.startActivity(webIntent)
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = CircleShape
+                        ) {
+                            Icon(Icons.Default.Language, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("GitHub", fontSize = 12.sp)
+                        }
+                    }
                 }
             }
         }
@@ -753,36 +691,5 @@ fun SettingsScreen(
     // Hộp thoại Ủng hộ Tác giả (Donate)
     if (showDonateDialog) {
         DonateDialog(onDismiss = { showDonateDialog = false })
-    }
-
-    // Hộp thoại Đăng nhập / Đăng ký Email & Mật khẩu thực tế
-    if (showAuthDialog) {
-        AuthDialog(
-            initialTab = authInitialTab,
-            onDismiss = { showAuthDialog = false },
-            onSuccess = { user ->
-                showAuthDialog = false
-                Toast.makeText(context, "Chào mừng ${user.name} đã đăng nhập thành công!", Toast.LENGTH_SHORT).show()
-            }
-        )
-    }
-
-    // Hộp thoại Đăng nhập Google thực tế chuẩn Google Identity Services
-    if (showGoogleDialog) {
-        GoogleSignInDialog(
-            onDismiss = { showGoogleDialog = false },
-            onSuccess = { user ->
-                showGoogleDialog = false
-                lastSyncText = "Vừa xong"
-                Toast.makeText(context, "Đăng nhập Google thành công: ${user.email}", Toast.LENGTH_SHORT).show()
-            }
-        )
-    }
-
-    // Hộp thoại Đổi mật khẩu
-    if (showChangePasswordDialog) {
-        ChangePasswordDialog(
-            onDismiss = { showChangePasswordDialog = false }
-        )
     }
 }

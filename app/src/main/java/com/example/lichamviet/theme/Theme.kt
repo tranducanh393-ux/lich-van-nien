@@ -19,6 +19,7 @@ val M3Shapes = Shapes(
 )
 
 fun createColorSchemeForTheme(theme: AppTheme, isSystemDark: Boolean): ColorScheme = when (theme) {
+    AppTheme.SYSTEM_AUTO -> createColorSchemeForTheme(AppTheme.MODERN_BLUE, isSystemDark)
     AppTheme.MODERN_BLUE -> if (isSystemDark) {
         darkColorScheme(
             primary = DarkPrimary,

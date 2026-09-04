@@ -1,0 +1,22 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Khối bloc lịch đơn sắc chuẩn Themed Icons -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M28,29h52a8,8 0,0,1 8,8v42a8,8 0,0,1 -8,8h-52a8,8 0,0,1 -8,-8v-42a8,8 0,0,1 8,-8z" />
+
+    <!-- Khoen kẹp lịch -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M38,24h4a2,2 0,0,1 2,2v7h-8v-7a2,2 0,0,1 2,-2z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M66,24h4a2,2 0,0,1 2,2v7h-8v-7a2,2 0,0,1 2,-2z" />
+
+    <!-- Khoét rỗng phần trăng khuyết và nẹp lịch -->
+    <!-- (Trong Themed icon, hệ thống sẽ tự động tô màu theo tông màu hình nền) -->
+</vector>

@@ -10,6 +10,7 @@ enum class AppTheme(
     val colorHex: Long,
     val isDark: Boolean = false
 ) {
+    SYSTEM_AUTO("system_auto", "Tự Động Theo Hệ Thống", 0xFF0B57D0),
     MODERN_BLUE("modern_blue", "Xanh Hiện Đại", 0xFF0B57D0),
     JADE_GREEN("jade_green", "Xanh Ngọc Bích", 0xFF006C4C),
     AMBER_WARM("amber_warm", "Vàng Hổ Phách", 0xFF855300),
@@ -36,12 +37,12 @@ data class UserProfile(
 data class UserPreferences(
     val isVip: Boolean = false,
     val currentPlan: String = "Miễn phí",
-    val theme: AppTheme = AppTheme.MODERN_BLUE,
+    val theme: AppTheme = AppTheme.SYSTEM_AUTO,
     val isLargeFont: Boolean = false,
     val notifyMung1Ram: Boolean = true,
     val notifyHolidays: Boolean = true,
     val morningNotifyHour: Int = 7,
-    val useDynamicColor: Boolean = false,
+    val useDynamicColor: Boolean = true,
     val userProfile: UserProfile? = null
 )
 
@@ -122,6 +123,8 @@ object UserPreferencesRepository {
     fun setUseDynamicColor(enabled: Boolean) {
         _preferences.value = _preferences.value.copy(useDynamicColor = enabled)
     }
+
+    fun setDynamicColor(enabled: Boolean) = setUseDynamicColor(enabled)
 
     fun setUserProfile(profile: UserProfile?) {
         _preferences.value = _preferences.value.copy(userProfile = profile)
