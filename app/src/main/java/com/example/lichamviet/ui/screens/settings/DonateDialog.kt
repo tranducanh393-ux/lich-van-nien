@@ -6,7 +6,9 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -23,12 +25,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.lichamviet.R
 
 data class DonatePackage(
     val id: String,
@@ -48,13 +52,15 @@ val DONATE_PACKAGES = listOf(
     DonatePackage("custom", "✍️", "Tùy Tâm", 0, "Tùy chọn", "Đóng góp số tiền bạn mong muốn")
 )
 
-// Cấu hình tài khoản nhận Donate (có thể thay đổi số tài khoản ở đây)
+// Cấu hình tài khoản nhận Donate chính thức của tác giả Trần Đức Anh
 object DonateConfig {
-    const val BANK_NAME = "MBBank (Ngân Hàng Quân Đội)"
-    const val BANK_CODE = "MB" // Mã ngân hàng Napas
-    const val ACCOUNT_NUMBER = "0987654321" // Số tài khoản ngân hàng
-    const val ACCOUNT_HOLDER = "TRAN DUC ANH" // Tên chủ tài khoản
-    const val MOMO_PHONE = "0987654321" // Số điện thoại MoMo
+    const val BANK_NAME = "Techcombank (Ngân Hàng Kỹ Thương)"
+    const val BANK_CODE = "TCB"
+    const val ACCOUNT_NUMBER = "9203092003"
+    const val ACCOUNT_NUMBER_DISPLAY = "9203 0920 03"
+    const val ACCOUNT_HOLDER = "TRAN DUC ANH"
+    const val MOMO_PHONE = "0345413260"
+    const val MOMO_HOLDER = "TRẦN ĐỨC ANH"
     const val DEFAULT_TRANSFER_SYNTAX = "Ung ho Lich Am Viet"
 }
 
@@ -225,17 +231,12 @@ fun DonateDialog(
                     Tab(
                         selected = selectedMethodTab == 0,
                         onClick = { selectedMethodTab = 0 },
-                        text = { Text("Ngân Hàng", fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+                        text = { Text("Techcombank (VietQR)", fontSize = 12.sp, fontWeight = FontWeight.Bold) }
                     )
                     Tab(
                         selected = selectedMethodTab == 1,
                         onClick = { selectedMethodTab = 1 },
-                        text = { Text("Ví MoMo", fontSize = 12.sp, fontWeight = FontWeight.Bold) }
-                    )
-                    Tab(
-                        selected = selectedMethodTab == 2,
-                        onClick = { selectedMethodTab = 2 },
-                        text = { Text("Mã VietQR", fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+                        text = { Text("Ví MoMo (VietQR)", fontSize = 12.sp, fontWeight = FontWeight.Bold) }
                     )
                 }
 
@@ -244,21 +245,50 @@ fun DonateDialog(
                 // Nội dung từng Tab phương thức
                 when (selectedMethodTab) {
                     0 -> {
-                        // Chuyển khoản ngân hàng
+                        // Chuyển khoản ngân hàng Techcombank
                         ElevatedCard(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                         ) {
-                            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Column(
+                                modifier = Modifier.padding(14.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                // Ảnh mã QR Techcombank thực tế
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                    color = Color.White,
+                                    modifier = Modifier.padding(4.dp)
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.qr_techcombank),
+                                        contentDescription = "Mã QR Techcombank",
+                                        modifier = Modifier
+                                            .size(210.dp)
+                                            .padding(6.dp)
+                                    )
+                                }
+
+                                Text(
+                                    text = "Quét bằng mọi ứng dụng ngân hàng qua VietQR 24/7",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text("Ngân hàng nhận:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text(DonateConfig.BANK_NAME, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                        Text("Ngân hàng:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(DonateConfig.BANK_NAME, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                                     }
                                 }
 
@@ -271,7 +301,7 @@ fun DonateDialog(
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text("Số tài khoản:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text(DonateConfig.ACCOUNT_NUMBER, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                                        Text(DonateConfig.ACCOUNT_NUMBER_DISPLAY, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
                                     }
                                     FilledTonalButton(
                                         onClick = { copyToClipboard("Số tài khoản", DonateConfig.ACCOUNT_NUMBER) },
@@ -285,7 +315,7 @@ fun DonateDialog(
 
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-                                Column {
+                                Column(modifier = Modifier.fillMaxWidth()) {
                                     Text("Chủ tài khoản:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text(DonateConfig.ACCOUNT_HOLDER, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                                 }
@@ -329,23 +359,36 @@ fun DonateDialog(
                         // Ví MoMo
                         ElevatedCard(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                         ) {
-                            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(
+                            Column(
+                                modifier = Modifier.padding(14.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                // Ảnh mã QR MoMo thực tế
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                    color = Color.White,
+                                    modifier = Modifier.padding(4.dp)
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.qr_momo),
+                                        contentDescription = "Mã QR MoMo",
                                         modifier = Modifier
-                                            .size(28.dp)
-                                            .clip(CircleShape)
-                                            .background(Color(0xFFA50064)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text("M", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Chuyển qua Ví MoMo", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                            .size(210.dp)
+                                            .padding(6.dp)
+                                    )
                                 }
+
+                                Text(
+                                    text = "Quét bằng ứng dụng Ví MoMo hoặc ngân hàng hỗ trợ VietQR",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
 
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
@@ -354,7 +397,7 @@ fun DonateDialog(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Column {
+                                    Column(modifier = Modifier.weight(1f)) {
                                         Text("Số điện thoại MoMo:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Text(DonateConfig.MOMO_PHONE, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
                                     }
@@ -368,54 +411,44 @@ fun DonateDialog(
                                     }
                                 }
 
-                                Column {
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                                Column(modifier = Modifier.fillMaxWidth()) {
                                     Text("Chủ ví:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text(DonateConfig.ACCOUNT_HOLDER, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    Text(DonateConfig.MOMO_HOLDER, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                                 }
-                            }
-                        }
-                    }
-                    2 -> {
-                        // Hướng dẫn VietQR
-                        ElevatedCard(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.QrCodeScanner,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(48.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "Quét Mã VietQR Chuyển Nhanh 24/7",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Mở ứng dụng Ngân hàng bất kỳ (Vietcombank, MB, Techcombank, VPBank...) chọn chức năng Quét QR và chuyển khoản vào số tài khoản:\n${DonateConfig.ACCOUNT_NUMBER} (${DonateConfig.BANK_NAME})",
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Center,
-                                    lineHeight = 16.sp
-                                )
-                                Spacer(modifier = Modifier.height(10.dp))
-                                Button(
-                                    onClick = { copyToClipboard("Số tài khoản", DonateConfig.ACCOUNT_NUMBER) },
+
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                                Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(10.dp)
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Sao Chép Số Tài Khoản Ngân Hàng")
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text("Lời nhắn chuyển tiền:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(transferContent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                                    }
+                                    FilledTonalButton(
+                                        onClick = { copyToClipboard("Lời nhắn", transferContent) },
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                                    ) {
+                                        Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Chép", fontSize = 11.sp)
+                                    }
+                                }
+
+                                if (activeAmount > 0) {
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text("Số tiền:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text("%,d đ".format(activeAmount), fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.error)
+                                    }
                                 }
                             }
                         }

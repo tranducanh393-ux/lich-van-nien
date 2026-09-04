@@ -135,5 +135,20 @@ app/src/main/java/com/example/lichamviet/
 
 ---
 
+## 💖 Ủng Hộ Phát Triển (Donate / Sponsor)
+
+Nếu bạn yêu thích ứng dụng **Lịch Vạn Niên (Lịch Âm Việt)** và muốn tiếp thêm động lực cho tác giả duy trì máy chủ và hoàn thiện ứng dụng ngày một tốt hơn, bạn có thể ủng hộ tác giả qua:
+
+| 🏦 Ngân Hàng Techcombank (VietQR) | 📱 Ví Điện Tử MoMo (VietQR) |
+| :---: | :---: |
+| **Techcombank (Kỹ Thương Việt Nam)** | **Ví MoMo** |
+| Số tài khoản: **`9203 0920 03`** | Số điện thoại: **`0345413260`** |
+| Chủ TK: **TRAN DUC ANH** | Chủ ví: **TRẦN ĐỨC ANH** |
+| Cú pháp: `Ung ho Lich Am Viet` | Lời nhắn: `Ung ho Lich Am Viet` |
+
+*Trân trọng cảm ơn mọi sự đồng hành và đóng góp quý báu của bạn!* ❤️
+
+---
+
 ## 📄 Bản Quyền & Giấy Phép (License)
 Dự án được phát hành dưới giấy phép [MIT License](LICENSE). Mọi đóng góp (Pull Request, Issue) đều được chào đón nồng nhiệt!
